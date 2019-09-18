@@ -1,11 +1,17 @@
 import React from 'react';
+import { connect } from 'react-redux';
 
 import FormInput from '../form-input/form-input.component';
 import CustomButton from '../custom-button/custom-button.component';
 
+import { signUpStart } from '../../redux/user/user.actions';
+
 import {auth, createUserProfileDocument } from '../../firebase/firebase.utils';
 
+import { selectUserProfile } from '../../redux/user/user.selectors';
+
 import './sign-up.styles.scss';
+import { createStructuredSelector } from 'reselect';
 
 class SignUp extends React.Component {
     constructor() {
@@ -23,27 +29,14 @@ class SignUp extends React.Component {
         event.preventDefault();
         
         const {displayName, email, password, confirmPassword } = this.state;
+        const { signUpStart } = this.props;
 
         if(password !== confirmPassword) {
             alert("passwords don't match");
             return;
         }
 
-        try {
-            const { user } = await auth.createUserWithEmailAndPassword(email, password);
-
-            await createUserProfileDocument(user, { displayName });
-
-            this.setState({
-                displayName: '',
-                email: '',
-                password: '',
-                confirmPassword: ''    
-            })
-
-        } catch(error) {
-            console.error(error);
-        }
+        signUpStart( {displayName, email, password});
     }
 
     handleChange = event => {
@@ -53,7 +46,9 @@ class SignUp extends React.Component {
     }
 
     render() {
+        const { userProfile } = this.props;
         const {displayName, email, password, confirmPassword } = this.state;
+        console.log("render - userProfile: " + userProfile.displayName);
 
         return(
             <div className='sign-up'>
@@ -99,4 +94,12 @@ class SignUp extends React.Component {
     }
 }
 
-export default SignUp;
+const mapStateToProps = createStructuredSelector ({
+    userProfile: selectUserProfile
+});
+
+const mapDispatchToProps = dispatch => ({
+    signUpStart: userProfile => dispatch(signUpStart(userProfile))
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(SignUp);
